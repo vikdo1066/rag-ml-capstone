@@ -8,6 +8,8 @@ permissions:
 env:
   PROJECT: ${{ vars.PROJECT_ID }}
   REGION: europe-west8
+  # Placeholder until the service has its own Dockerfile.
+  SOURCE_IMAGE: gcr.io/cloudrun/hello
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,10 +21,19 @@ jobs:
           service_account: ${{ vars.DEPLOY_SA }}
       - uses: google-github-actions/setup-gcloud@v3
       - run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
-      - run: docker build -t ${REGION}-docker.pkg.dev/${PROJECT}/app-repo/hello:${GITHUB_SHA} .
+      - run: docker pull ${SOURCE_IMAGE}
+      - run: docker tag ${SOURCE_IMAGE} ${REGION}-docker.pkg.dev/${PROJECT}/app-repo/hello:${GITHUB_SHA}
       - run: docker push ${REGION}-docker.pkg.dev/${PROJECT}/app-repo/hello:${GITHUB_SHA}
       - run: |
           gcloud run deploy hello \
               --image=${REGION}-docker.pkg.dev/${PROJECT}/app-repo/hello:${GITHUB_SHA} \
               --region=${REGION} \
+              --labels=engagement=sandbox,environment=dev,team=platform,cost_center=cc-1234,managed_by=terraform \
               --quiet
+      - name: Smoke test the Cloud Run URL
+        continue-on-error: true
+        run: |
+          URL=$(gcloud run services describe hello --region=${REGION} --format='value(status.url)')
+          echo "Cloud Run URL: ${URL}"
+          curl -sS -o /dev/null -w '%{http_code}\n' \
+              -H "Authorization: Bearer $(gcloud auth print-identity-token)" "${URL}"
