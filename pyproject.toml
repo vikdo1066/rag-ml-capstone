@@ -7,7 +7,10 @@ authors = [
     { name = "viktor.dogic", email = "viktor.dogic@datatonic.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "dotenv>=0.9.9",
+    "google-genai>=2.21.0",
+]
 
 [project.scripts]
 rag-ml-capstone = "rag_ml_capstone:main"

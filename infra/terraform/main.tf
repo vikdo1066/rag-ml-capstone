@@ -28,7 +28,8 @@ locals {
     "storage.googleapis.com",
     "secretmanager.googleapis.com",
     "logging.googleapis.com",
-    "monitoring.googleapis.com"
+    "monitoring.googleapis.com",
+    "aiplatform.googleapis.com"
   ]
   common_labels = {
     engagement  = var.engagement
@@ -46,6 +47,22 @@ resource "google_project_service" "required_apis" {
   disable_on_destroy         = false
   disable_dependent_services = false
 }
+
+resource "google_storage_bucket" "raw_docs" {
+  name                        = "${var.project_id}-raw-docs"
+  location                    = var.region
+  uniform_bucket_level_access = true
+  versioning { enabled = true }
+  labels = local.common_labels
+}
+
+resource "google_storage_bucket" "embeddings" {
+  name                        = "${var.project_id}-embeddings"
+  location                    = var.region
+  uniform_bucket_level_access = true
+  labels                      = local.common_labels
+}
+
 
 # ------------------------------------------------------------------------------
 # 2. Artifact Registry Repository
@@ -77,7 +94,7 @@ resource "google_iam_workload_identity_pool" "github_pool" {
 resource "google_iam_workload_identity_pool_provider" "github_provider" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github_pool.workload_identity_pool_id
   workload_identity_pool_provider_id = "github-provider"
-  display_name                        = "GitHub Provider"
+  display_name                       = "GitHub Provider"
 
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
@@ -122,6 +139,28 @@ resource "google_service_account_iam_member" "wif_sa_impersonation" {
   service_account_id = google_service_account.deploy_sa.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/${var.github_repo}"
+}
+
+resource "google_service_account" "rag_runtime" {
+  account_id   = "rag-runtime"
+  display_name = "RAG runtime (FastAPI)"
+}
+
+resource "google_service_account" "rag_indexer" {
+  account_id   = "rag-indexer"
+  display_name = "RAG indexing job"
+}
+
+resource "google_project_iam_member" "rag_runtime_aiplatform" {
+  project = var.project_id
+  role    = "roles/aiplatform.user" # query-time: embedding + index endpoint + Gemini predicts
+  member  = "serviceAccount:${google_service_account.rag_runtime.email}"
+}
+
+resource "google_storage_bucket_iam_member" "rag_runtime_embeddings_reader" {
+  bucket = google_storage_bucket.embeddings.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.rag_runtime.email}"
 }
 
 # ------------------------------------------------------------------------------
