@@ -1,0 +1,24 @@
+[project]
+name = "rag-ml-capstone"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "viktor.dogic", email = "viktor.dogic@datatonic.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+rag-ml-capstone = "rag_ml_capstone:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "pytest>=8.3",
+]
