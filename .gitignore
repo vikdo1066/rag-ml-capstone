@@ -8,3 +8,16 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Terraform plugin cache and local state (providers are >100MB)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
