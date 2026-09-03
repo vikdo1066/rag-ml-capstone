@@ -11,6 +11,8 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+  billing_project = var.project_id
+  user_project_override = true
 }
 
 # ------------------------------------------------------------------------------
@@ -29,7 +31,8 @@ locals {
     "secretmanager.googleapis.com",
     "logging.googleapis.com",
     "monitoring.googleapis.com",
-    "aiplatform.googleapis.com"
+    "aiplatform.googleapis.com",
+    "billingbudgets.googleapis.com"
   ]
   common_labels = {
     engagement  = var.engagement
@@ -172,4 +175,48 @@ resource "google_iap_brand" "iap_brand" {
   project           = var.project_id
 
   depends_on = [google_project_service.required_apis]
+}
+
+# ------------------------------------------------------------------------------
+# 6. Google Billing Account
+# -----------------------------------------------------------------------------
+
+resource "google_monitoring_notification_channel" "notification_channel" {
+  display_name = "Billing Budget Notification Channel"
+  type = "email"
+  labels = {
+    email_address = var.support_email
+  }
+}
+
+resource "google_billing_budget" "billing_budget" {
+  billing_account = var.billing_account_id
+  display_name = "Billing Budget for ${var.project_id}"
+
+  budget_filter {
+    projects = ["projects/${var.project_id}"]
+  }
+
+  amount {
+    specified_amount {
+      currency_code = "GBP"
+      units = "100"
+    }
+  }
+
+  threshold_rules {
+    threshold_percent = 0.5
+  }
+  threshold_rules {
+    threshold_percent = 0.8
+  }
+  threshold_rules {
+    threshold_percent = 1.0
+  }
+
+  all_updates_rule {
+    disable_default_iam_recipients = true
+    monitoring_notification_channels  = [google_monitoring_notification_channel.notification_channel.name,]
+  }
+
 }

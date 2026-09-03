@@ -7,7 +7,7 @@ permissions:
   contents: read
 env:
   PROJECT: ${{ vars.PROJECT_ID }}
-  REGION: europe-west8
+  REGION: ${{ vars.REGION }}
   # Placeholder until the service has its own Dockerfile.
   SOURCE_IMAGE: gcr.io/cloudrun/hello
 jobs:

@@ -49,7 +49,7 @@ variable "cost_center" {
 variable "billing_account_id" {
   type        = string
   description = "GCP Billing Account ID (Required for budget alerts)"
-  default     = "" # Optional: populate if configuring google_billing_budget
+  default     = "002831-A42942-C36931"
 }
 
 variable "alert_email_address" {
