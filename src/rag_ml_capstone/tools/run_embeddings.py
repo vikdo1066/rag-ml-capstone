@@ -9,7 +9,7 @@ dotenv.load_dotenv()
 PROJECT = dotenv.get_key(".env", "PROJECT_ID")
 REGION = dotenv.get_key(".env", "REGION")
 
-EMBEDDING_MODEL = "text-embedding-004"
+EMBEDDING_MODEL = dotenv.get_key(".env", "TEXT_EMBEDDING_MODEL")
 EMBEDDING_DIMENSIONS = 768
 
 client = genai.Client(project=PROJECT, vertexai=True, location=REGION)
@@ -17,7 +17,7 @@ storage_client = storage.Client(project=PROJECT)
 
 CHUNK_BUCKET = f"{PROJECT}-embeddings"
 src = storage_client.bucket(CHUNK_BUCKET).blob("chunks/chunks.jsonl")
-dst = storage_client.bucket(CHUNK_BUCKET).blob("index/embeddings.jsonl")
+dst = storage_client.bucket(CHUNK_BUCKET).blob("index/embeddings.json")
 
 with src.open("r") as f_in, dst.open("w") as f_out:
     for line in f_in:

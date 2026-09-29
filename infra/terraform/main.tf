@@ -220,3 +220,26 @@ resource "google_billing_budget" "billing_budget" {
   }
 
 }
+
+
+# ------------------------------------------------------------------------------
+# 7. Vertex AI Index
+# ------------------------------------------------------------------------------
+
+module "rag" {
+  source = "./modules/rag"
+
+  project_id = var.project_id
+  region = var.region
+  embeddings_bucket_uri = "gs://${google_storage_bucket.embeddings.name}/index/"
+  raw_docs_bucket_name = google_storage_bucket.raw_docs.name
+  embeddings_bucket_name = google_storage_bucket.embeddings.name
+  rag_indexer_email = google_service_account.rag_indexer.email
+
+  depends_on = [
+    google_storage_bucket.embeddings,
+    google_project_service.required_apis
+  ]
+
+
+}
